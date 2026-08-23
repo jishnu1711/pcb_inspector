@@ -1,0 +1,53 @@
+# Python bytecode, virtual environments, and test tooling
+__pycache__/
+*.py[cod]
+*.so
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Python build and packaging artifacts
+build/
+dist/
+*.egg-info/
+
+# Arduino/Zephyr build outputs
+sketch/build/
+sketch/.arduino/
+sketch/.pio/
+zephyr/build/
+*.elf
+*.bin
+*.hex
+*.map
+
+# Generated local jobs, plans, reports, and execution traces
+data/
+runtime/
+outputs/
+plan.json
+report.json
+report.md
+*.trace.json
+
+# Secrets and machine-specific configuration
+.env
+.env.*
+!.env.example
+secrets/
+python/device/local_config.*
+!python/device/local_config.example.*
+
+# IDE and operating-system files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db

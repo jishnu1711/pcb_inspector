@@ -1,0 +1,15 @@
+thresholds:
+  continuity_max_ohm: 10.0
+  isolation_min_ohm: 1000000
+  diode_vf_min_v: 0.3
+  diode_vf_max_v: 0.9
+  led_vf_min_v: 1.8
+  led_vf_max_v: 3.5
+  min_probe_separation_mm: 0.5
+
+llm:
+  enabled: false
+  provider: ollama
+  model: phi3
+  base_url: http://127.0.0.1:11434
+  timeout_sec: 120

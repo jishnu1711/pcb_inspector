@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0a1015">
+    <title>UNO Q PCB Inspector</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="brand" href="#top" aria-label="UNO Q PCB Inspector home">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span>UNO Q <strong>PCB INSPECTOR</strong></span>
+        </a>
+        <div class="system-state"><span class="state-dot"></span><span id="system-state">System ready</span></div>
+      </header>
+
+      <section class="hero" id="top" aria-labelledby="page-title">
+        <p class="eyebrow">FLYING-PROBE PREFLIGHT</p>
+        <h1 id="page-title">Turn a KiCad design into an inspection plan.</h1>
+        <p class="hero-copy">
+          Upload the board and schematic. The inspector maps electrical nets,
+          selects probe locations, and finalizes a ready-to-run test plan.
+        </p>
+      </section>
+
+      <section class="workspace" aria-label="Inspection planner">
+        <div class="panel upload-panel" id="upload-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">01 / INPUT PACKAGE</p>
+              <h2>Load design files</h2>
+            </div>
+            <span class="panel-status" id="input-status">Awaiting files</span>
+          </div>
+
+          <div class="file-grid">
+            <label class="file-card" id="pcb-card" for="pcb-file">
+              <input id="pcb-file" type="file" accept=".kicad_pcb" hidden>
+              <span class="file-icon" aria-hidden="true">PCB</span>
+              <span class="file-detail">
+                <strong>PCB layout</strong>
+                <small class="file-name" id="pcb-name">Select .kicad_pcb</small>
+              </span>
+              <span class="file-action">Browse</span>
+            </label>
+
+            <label class="file-card" id="sch-card" for="sch-file">
+              <input id="sch-file" type="file" accept=".kicad_sch" hidden>
+              <span class="file-icon" aria-hidden="true">SCH</span>
+              <span class="file-detail">
+                <strong>Schematic</strong>
+                <small class="file-name" id="sch-name">Select .kicad_sch</small>
+              </span>
+              <span class="file-action">Browse</span>
+            </label>
+          </div>
+
+          <p class="upload-note" id="upload-note">Both KiCad design files are required to begin.</p>
+          <button class="run-button" id="run-button" type="button" disabled>
+            <span>Generate inspection plan</span>
+            <span aria-hidden="true">→</span>
+          </button>
+        </div>
+
+        <div class="panel progress-panel" aria-live="polite">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">02 / INSPECTION PIPELINE</p>
+              <h2>Plan status</h2>
+            </div>
+            <span class="run-id" id="run-id">IDLE</span>
+          </div>
+
+          <ol class="steps" id="steps">
+            <li class="step" data-step="0">
+              <span class="step-marker"><span class="step-number">1</span><span class="tick">✓</span></span>
+              <span class="step-copy"><strong>Design received</strong><small>Validate KiCad board and schematic package</small></span>
+              <span class="step-state">Waiting</span>
+            </li>
+            <li class="step" data-step="1">
+              <span class="step-marker"><span class="step-number">2</span><span class="tick">✓</span></span>
+              <span class="step-copy"><strong>PCB connectivity analyzed</strong><small>Map component pins and electrical nets</small></span>
+              <span class="step-state">Queued</span>
+            </li>
+            <li class="step" data-step="2">
+              <span class="step-marker"><span class="step-number">3</span><span class="tick">✓</span></span>
+              <span class="step-copy"><strong>Probe points selected</strong><small>Rank accessible test pads and vias</small></span>
+              <span class="step-state">Queued</span>
+            </li>
+            <li class="step" data-step="3">
+              <span class="step-marker"><span class="step-number">4</span><span class="tick">✓</span></span>
+              <span class="step-copy"><strong>Test plan finalized</strong><small>Sequence continuity, isolation, and diode checks</small></span>
+              <span class="step-state">Queued</span>
+            </li>
+          </ol>
+
+          <div class="success-card" id="success-card" hidden>
+            <span class="success-icon" aria-hidden="true">✓</span>
+            <div>
+              <p class="eyebrow">PLAN FINALIZED</p>
+              <h3>Inspection plan ready.</h3>
+              <p>Your design package is ready for probe execution.</p>
+            </div>
+            <div class="success-actions">
+              <button class="secondary-button" id="review-plan-button" type="button">Review plan summary</button>
+              <button class="proceed-button" id="proceed-button" type="button">Proceed to testing <span aria-hidden="true">→</span></button>
+              <button class="reset-button" id="reset-button" type="button">New plan</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel execution-panel" id="execution-panel" aria-live="polite" hidden>
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">03 / DEVICE EXECUTION</p>
+            <h2>Test run status</h2>
+          </div>
+          <span class="run-id" id="test-run-id">STANDBY</span>
+        </div>
+
+        <ol class="steps" id="test-steps">
+          <li class="step" data-test-step="0">
+            <span class="step-marker"><span class="step-number">1</span><span class="tick">✓</span></span>
+            <span class="step-copy"><strong>Looking for devices</strong><small>Searching for an available UNO Q PCB Inspector</small></span>
+            <span class="step-state">Waiting</span>
+          </li>
+          <li class="step" data-test-step="1">
+            <span class="step-marker"><span class="step-number">2</span><span class="tick">✓</span></span>
+            <span class="step-copy"><strong>Device found: UNOQ-INSPECTOR-07</strong><small>Compatible inspector reserved for this test plan</small></span>
+            <span class="step-state">Queued</span>
+          </li>
+          <li class="step" data-test-step="2">
+            <span class="step-marker"><span class="step-number">3</span><span class="tick">✓</span></span>
+            <span class="step-copy"><strong>Performing electrical tests</strong><small>Running probe sequence and collecting measurement data</small></span>
+            <span class="step-state">Queued</span>
+          </li>
+          <li class="step" data-test-step="3">
+            <span class="step-marker"><span class="step-number">4</span><span class="tick">✓</span></span>
+            <span class="step-copy"><strong>Tests performed</strong><small>Consolidating captured results and diagnostics</small></span>
+            <span class="step-state">Queued</span>
+          </li>
+        </ol>
+
+        <div class="success-card report-ready" id="report-ready" hidden>
+          <span class="success-icon" aria-hidden="true">✓</span>
+          <div>
+            <p class="eyebrow">TEST RUN COMPLETE</p>
+            <h3>PCB manufacturing inspection passed.</h3>
+            <p>All simulated electrical checks passed. The board is ready for final report review.</p>
+          </div>
+          <button class="proceed-button" id="review-report-button" type="button">Review test report <span aria-hidden="true">→</span></button>
+        </div>
+
+        <div class="report-preview" id="report-preview" hidden>
+          <div class="verdict"><span>MANUFACTURING VERDICT</span><strong>PCB PASSED</strong><small>All simulated electrical tests passed</small></div>
+          <div><span>DEVICE</span><strong>UNOQ-INSPECTOR-07</strong></div>
+          <div><span>TESTS PERFORMED</span><strong class="pass">48 / 48 PASSED</strong></div>
+          <div><span>MEASUREMENT DATA</span><strong>COLLECTED</strong></div>
+        </div>
+      </section>
+
+      <footer>
+        <span>LOCAL DESIGN ANALYSIS</span>
+        <span>UNO Q APPLICATION LAB</span>
+      </footer>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
