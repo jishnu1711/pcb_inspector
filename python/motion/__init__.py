@@ -1,21 +1,90 @@
 """Hardware-independent planar motion planning for the dual probe arms."""
 
-from .geometry import ARM_1, ARM_2, ArmGeometry, FixtureTransform, Point
-from .kinematics import ArmPose, IKError, JointAngles, forward_kinematics, inverse_kinematics
-from .planner import DualArmPlanner, MotionPlan, PlannerConfig
+from .calibration import ArmCalibration, JointCalibration, default_calibrations
+from .geometry import (
+    ARM_1,
+    ARM_2,
+    BASE_GAP_MM,
+    DEFAULT_LAYOUT,
+    ArmGeometry,
+    BoardOutline,
+    FixtureTransform,
+    MachineLayout,
+    Point,
+)
+from .kinematics import (
+    ArmPose,
+    IKError,
+    JointAngles,
+    branch_of,
+    forearm_heading_deg,
+    forward_kinematics,
+    inverse_kinematics,
+    inverse_kinematics_all,
+    rocker_heading_deg,
+)
+from .planner import DualArmPlanner, PlannerConfig, PlanningError
+from .profile import ScalarProfile, make_profile
+from .simulator import ReplayResult, ReplaySample, replay_plan
+from .trajectory import (
+    ARM1_HOLD_JOINTS,
+    ARM2_HOLD_JOINTS,
+    DualJointState,
+    MotionPlan,
+    TrajectoryOperation,
+    TrajectorySample,
+    safe_hold_state,
+)
+from .validation import (
+    ValidationError,
+    inter_arm_clearance,
+    links_over_board,
+    self_collision_free,
+    validate_arm_state,
+    validate_operation,
+)
 
 __all__ = [
     "ARM_1",
     "ARM_2",
+    "ARM1_HOLD_JOINTS",
+    "ARM2_HOLD_JOINTS",
+    "BASE_GAP_MM",
+    "DEFAULT_LAYOUT",
+    "ArmCalibration",
     "ArmGeometry",
-    "FixtureTransform",
-    "Point",
     "ArmPose",
+    "BoardOutline",
+    "DualArmPlanner",
+    "DualJointState",
+    "FixtureTransform",
     "IKError",
     "JointAngles",
-    "forward_kinematics",
-    "inverse_kinematics",
-    "DualArmPlanner",
+    "JointCalibration",
+    "MachineLayout",
     "MotionPlan",
     "PlannerConfig",
+    "PlanningError",
+    "Point",
+    "ReplayResult",
+    "ReplaySample",
+    "ScalarProfile",
+    "TrajectoryOperation",
+    "TrajectorySample",
+    "ValidationError",
+    "branch_of",
+    "default_calibrations",
+    "forearm_heading_deg",
+    "forward_kinematics",
+    "inter_arm_clearance",
+    "inverse_kinematics",
+    "inverse_kinematics_all",
+    "links_over_board",
+    "make_profile",
+    "replay_plan",
+    "rocker_heading_deg",
+    "safe_hold_state",
+    "self_collision_free",
+    "validate_arm_state",
+    "validate_operation",
 ]

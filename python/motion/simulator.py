@@ -5,18 +5,24 @@ from __future__ import annotations
 from dataclasses import dataclass
 from math import hypot
 
+from .calibration import ArmCalibration
 from .geometry import ArmGeometry, Point
 from .kinematics import ArmPose, forward_kinematics
 from .trajectory import MotionPlan
-from .validation import validate_operation
+from .validation import inter_arm_clearance, links_over_board, validate_operation
 
 
 @dataclass(frozen=True)
 class ReplaySample:
     operation: str
     sample_index: int
+    time_s: float
+    moving_arm: str
     arm1_pose: ArmPose
     arm2_pose: ArmPose
+    inter_arm_clearance_mm: float
+    inter_arm_pair: str
+    links_over_board: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -24,30 +30,50 @@ class ReplayResult:
     samples: tuple[ReplaySample, ...]
     final_errors_mm: dict[str, float]
     validation_errors: tuple[str, ...]
+    min_inter_arm_clearance_mm: float
+    min_inter_arm_pair: str
 
 
 def replay_plan(
     plan: MotionPlan,
     geometries: dict[str, ArmGeometry],
-    calibrations,
+    calibrations: dict[str, ArmCalibration],
     tolerance_mm: float = 0.001,
+    board_corners: tuple[Point, ...] = (),
 ) -> ReplayResult:
-    """Replay every joint point through production FK and check final tip error."""
+    """Replay every joint point through production FK and check final tip error.
+
+    Inter-arm clearance and board intrusion are measured, not enforced: this
+    phase makes no inter-arm or fixture collision safety claim.
+    """
     samples: list[ReplaySample] = []
     errors: list[str] = []
     final_errors: dict[str, float] = {}
+    worst_clearance, worst_pair = float("inf"), ""
     for operation in plan.operations:
         for error in validate_operation(operation, geometries, calibrations):
             errors.append(f"{operation.name}: {error.message}")
         for index, sample in enumerate(operation.samples):
+            pose1 = forward_kinematics(sample.state.arm1, geometries["arm1"])
+            pose2 = forward_kinematics(sample.state.arm2, geometries["arm2"])
+            clearance, pair = inter_arm_clearance(sample.state, geometries)
+            if clearance < worst_clearance:
+                worst_clearance, worst_pair = clearance, pair
+            over_board = links_over_board(pose1, board_corners) + tuple(
+                f"arm2.{name}" for name in links_over_board(pose2, board_corners)
+            )
             samples.append(ReplaySample(
-                operation.name, index,
-                forward_kinematics(sample.state.arm1, geometries["arm1"]),
-                forward_kinematics(sample.state.arm2, geometries["arm2"]),
+                operation=operation.name, sample_index=index, time_s=sample.time_s,
+                moving_arm=sample.moving_arm, arm1_pose=pose1, arm2_pose=pose2,
+                inter_arm_clearance_mm=clearance, inter_arm_pair=pair,
+                links_over_board=over_board,
             ))
         final_pose = forward_kinematics(operation.target.for_arm(operation.moving_arm), geometries[operation.moving_arm])
         error_mm = hypot(final_pose.W[0] - operation.requested_machine_target[0], final_pose.W[1] - operation.requested_machine_target[1])
         final_errors[operation.moving_arm] = error_mm
         if error_mm > tolerance_mm:
             errors.append(f"{operation.name}: final tip error {error_mm:.6f} mm exceeds {tolerance_mm:.6f} mm")
-    return ReplayResult(tuple(samples), final_errors, tuple(errors))
+    return ReplayResult(
+        samples=tuple(samples), final_errors_mm=final_errors, validation_errors=tuple(errors),
+        min_inter_arm_clearance_mm=worst_clearance, min_inter_arm_pair=worst_pair,
+    )

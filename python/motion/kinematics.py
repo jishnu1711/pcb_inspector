@@ -31,6 +31,14 @@ def angular_distance_deg(first: float, second: float) -> float:
 
 @dataclass(frozen=True)
 class JointAngles:
+    """The two software joint coordinates, in the standard 2R convention.
+
+    ``shoulder_deg`` is the absolute heading of the upper arm A-E in the arm's
+    local frame. ``elbow_deg`` is the angle of the forearm E-W measured from the
+    *extension* of A-E, so 0 is fully outstretched and the sign says which way
+    the elbow bends. Neither is a motor angle: see :mod:`motion.calibration`.
+    """
+
     shoulder_deg: float
     elbow_deg: float
 
@@ -56,19 +64,47 @@ class IKError(ValueError):
     pass
 
 
-def forward_kinematics(joints: JointAngles, geometry: ArmGeometry = ARM_1) -> ArmPose:
-    """Return the machine-frame pose for software shoulder/elbow angles.
+def forearm_heading_deg(joints: JointAngles) -> float:
+    """Absolute heading of the forearm E-W in the arm's local frame.
 
-    The second software angle is inverted relative to the absolute forearm
-    heading, matching the current proven mechanism convention.
+    The parallelogram makes this heading independent of the upper arm, which is
+    exactly why it is not the joint coordinate: holding the elbow motor still
+    holds *this* constant while ``elbow_deg`` changes as the shoulder swings.
+    """
+    return normalize_degrees(joints.shoulder_deg + joints.elbow_deg)
+
+
+def rocker_heading_deg(joints: JointAngles, geometry: ArmGeometry = ARM_1) -> float:
+    """Absolute heading of the input rocker A-P in the arm's local frame.
+
+    This is the link the elbow motor actually drives, so it is the quantity
+    ``calibration`` converts into a motor command. It depends on *both* joint
+    coordinates, and on how the forearm is bolted to the output rocker.
+    """
+    offset = 180.0 if geometry.forearm_opposes_rocker else 0.0
+    return normalize_degrees(forearm_heading_deg(joints) + offset)
+
+
+def branch_of(joints: JointAngles) -> str:
+    """Return the IK branch a pose sits on, from the sign of the elbow angle."""
+    return "elbow_up" if normalize_degrees(joints.elbow_deg) > 0.0 else "elbow_down"
+
+
+def forward_kinematics(joints: JointAngles, geometry: ArmGeometry = ARM_1) -> ArmPose:
+    """Return the machine-frame pose for the software shoulder/elbow angles.
+
+    The tool tip is the textbook 2R chain: the upper arm at ``shoulder_deg`` and
+    the forearm at ``shoulder_deg + elbow_deg``. The parallelogram links A-P and
+    E-Q then follow from the forearm heading, offset by 180 degrees when the
+    forearm is mounted opposed to its output rocker.
     """
     shoulder = _unit(joints.shoulder_deg)
-    rocker = _unit(-joints.elbow_deg)
-    forearm = _unit(-joints.elbow_deg)
+    forearm = _unit(forearm_heading_deg(joints))
+    rocker = _unit(rocker_heading_deg(joints, geometry))
     local_a = (0.0, 0.0)
     local_e = _scale(shoulder, geometry.upper_arm_mm)
-    local_p = _scale(rocker, -geometry.input_rocker_mm)
-    local_q = _add(local_e, _scale(rocker, -geometry.output_rocker_mm))
+    local_p = _scale(rocker, geometry.input_rocker_mm)
+    local_q = _add(local_e, _scale(rocker, geometry.output_rocker_mm))
     local_w = _add(local_e, _scale(forearm, geometry.forearm_mm))
     return ArmPose(
         A=geometry.local_to_machine(local_a),
@@ -92,8 +128,9 @@ def inverse_kinematics_all(target_machine: Point, geometry: ArmGeometry = ARM_1)
     solutions: list[IKSolution] = []
     for branch, relative in (("elbow_down", -acos(cosine)), ("elbow_up", acos(cosine))):
         shoulder = target_heading - atan2(second * sin(relative), first + second * cos(relative))
-        forearm = shoulder + relative
-        joints = JointAngles(normalize_degrees(degrees(shoulder)), normalize_degrees(-degrees(forearm)))
+        # ``relative`` already is the elbow coordinate: the angle of the forearm
+        # measured from the extension of the upper arm.
+        joints = JointAngles(normalize_degrees(degrees(shoulder)), normalize_degrees(degrees(relative)))
         solutions.append(IKSolution(joints=joints, branch=branch, pose=forward_kinematics(joints, geometry)))
     return tuple(solutions)  # type: ignore[return-value]
 
